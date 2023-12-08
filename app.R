@@ -7,31 +7,32 @@
 #    http://shiny.rstudio.com/
 #
 
-h1hjcjhscjhca
 
 library(shiny)
 
-# Define UI for application that draws a histogram
+# Define UI for application 
 ui <- fluidPage(
-
-    # Application title
-    titlePanel("Old Faithful Geyser Data"),
-
-    # Sidebar with a slider input for number of bins 
-    sidebarLayout(
-        sidebarPanel(
-            sliderInput("bins",
-                        "Number of bins:",
-                        min = 1,
-                        max = 50,
-                        value = 30)
-        ),
-
-        # Show a plot of the generated distribution
-        mainPanel(
-           plotOutput("distPlot")
-        )
+  # Application title
+  titlePanel("Retirement Planning Simulation"),
+  
+  # Adding numeric input field for the number of simulation; Adding radio buttons for selecting the result type.
+  sidebarLayout(
+    sidebarPanel(
+      numericInput("num_simulations", "Number of Simulations:", value = 100),
+      radioButtons("typeInput", "Result type",
+                   choices = c("Win", "Lose", "Draw", "All"),
+                   selected = "All"),
+      actionButton("simulate", "Simulate")                 # action button to start the simulation
+    ),
+    
+    # Adding a main panel with a title, plot output, and table output.
+    mainPanel(
+      actionButton("sim_desc", "Tell me about the simulation"),
+      h3("Simulation Results"),
+      plotOutput("win_lose_histogram"),
+      htmlOutput("results_table")
     )
+  )
 )
 
 # Define server logic required to draw a histogram
