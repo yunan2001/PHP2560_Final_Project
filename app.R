@@ -30,7 +30,7 @@ retire_plan <- function(D, x, age, current_year, retire_year, s, i, r, p) {
   # Calculate profile values after retirement
   current_value <- before_retire$profile_value[n + 1]
   for (j in 1:m) {
-    current_value <- current_value * (1 + (i-r)/(1+r)) - p + s
+    current_value <- as.integer(current_value * (1 + (i-r)/(1+r)) - p + s)
     after_retire$profile_value[j] <- current_value
   }
   
@@ -94,7 +94,7 @@ ui <- fluidPage(
     mainPanel(
       actionButton("sim_desc", "Tell me about my Retirement Plan"),
       h3("Simulation Results"),
-      plotOutput("portfolio_value"),
+      plotlyOutput("portfolio_value"),
       plotlyOutput("Guage_prob"), 
       tableOutput("results_table")
     )
@@ -127,7 +127,7 @@ server <- function(input, output) {
   })
   
   # Create a plot
-  output$portfolio_value <- renderPlot({
+  output$portfolio_value <- renderPlotly({
     # Get the results from the simulation
     results <- simulated_results()
     retire_year <- input$retire_yr
@@ -144,9 +144,9 @@ server <- function(input, output) {
       annotate("text", x = retire_year+10, y = 4900000, label = paste("Retire Year:", retire_year), hjust = 1) +
       scale_color_manual(values = c("Success" = "chartreuse3", "Failure" = "orangered1")) +
       coord_cartesian(ylim = c(0, 5000000), xlim = c(min(results$year), retire_year+30))
-    
-    p
-  })
+    fig <- ggplotly(p)
+  
+    })
   # Create a guage
   output$Guage_prob <- renderPlotly({
     results <- simulated_results()
@@ -160,10 +160,14 @@ server <- function(input, output) {
     
     prob_success <- 100*prob_table$prob[prob_table$event == "Success"]
     success = c(80, 100)
-    warning = c(60, 79.99999)
-    danger = c(0, 59.99999)
-    ranges <- unique(c(danger, warning, success))
-    probSucColor <- c("red", "orange", "green")[findInterval(prob_success, ranges, rightmost.closed = TRUE)]
+    warning = c(50, 79.99999)
+    danger = c(0, 49.99999)
+    # ranges <- unique(c(danger, warning, success))
+    # probSucColor <- c("red", "orange", "green")[findInterval(prob_success, ranges, rightmost.closed = TRUE)]
+    
+    colors = c("red", "orange", "green")
+    color_index = findInterval(prob_success, c(danger[1], warning[1], success[1]), rightmost.closed = TRUE)
+    probSucColor = colors[color_index]
     
     fig <- plot_ly(
       domain = list(x = c(0, 1), y = c(0, 1)),
@@ -180,7 +184,8 @@ server <- function(input, output) {
         threshold = list(
           line = list(color = "green", width = 4),
           thickness = 0.75,
-          value = 100))) 
+          value = 100)),
+      number = list(suffix = "%")) # Add this line to include the percentage sign) 
     fig <- fig %>% layout(margin = list(l=30, r=30, t=80, b=30))
   })
   
