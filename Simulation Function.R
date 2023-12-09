@@ -76,12 +76,15 @@ prob_table <- test_result %>%
   group_by(event) %>%
   summarize(
     year = year,
-    sim_num = sim_num, 
+    sim_num = sim_num,
     event = event,
     prob = case_when(event == "Success" ~ sum(event == "Success")/nrow(prob_table),
                              event == "Failure" ~ sum(event == "Failure")/nrow(prob_table)),
     mean_profile = case_when(event == "Success" ~ mean(profile_value),
                              event == "Failure" ~ mean(profile_value))) %>%
+  ungroup()
+
+prob_table_filter <- prob_table %>%
   filter(event == "Success")
 
 prob_success <- prob_table$prob[1]

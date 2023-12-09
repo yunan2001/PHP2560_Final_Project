@@ -150,22 +150,15 @@ server <- function(input, output) {
   # Create a guage
   output$Guage_prob <- renderPlotly({
     results <- simulated_results()
-    num_simulations <- input$num_simulations
     prob_table <- results %>%
-      select(year, profile_value, sim_num, event) %>%
       filter(year == max(year)) %>%
       group_by(event) %>%
       summarize(
-        year = year,
-        sim_num = sim_num, 
-        event = event,
-        prob = case_when(event == "Success" ~ sum(event == "Success")/num_simulations,
-                         event == "Failure" ~ sum(event == "Failure")/num_simulations),
-        mean_profile = case_when(event == "Success" ~ mean(profile_value),
-                                 event == "Failure" ~ mean(profile_value))) %>%
-      filter(event == "Success")
+        count = n(),
+        prob = count / input$num_simulations,
+        mean_profile = mean(profile_value))
     
-    prob_success <- prob_table$prob[1]
+    prob_success <- 100*prob_table$prob[prob_table$event == "Success"]
     success = c(80, 100)
     warning = c(60, 79.99999)
     danger = c(0, 59.99999)
@@ -197,18 +190,28 @@ server <- function(input, output) {
   results_table <- reactive({
     results <- simulated_results()
     prob_table <- results %>%
-      select(year, profile_value, sim_num, event) %>%
       filter(year == max(year)) %>%
       group_by(event) %>%
       summarize(
-        year = year,
-        sim_num = sim_num, 
-        event = event,
-        prob = case_when(event == "Success" ~ sum(event == "Success")/nrow(prob_table),
-                         event == "Failure" ~ sum(event == "Failure")/nrow(prob_table)),
-        mean_profile = case_when(event == "Success" ~ mean(profile_value),
-                                 event == "Failure" ~ mean(profile_value))) %>%
-      filter(event == "Success")
+        count = n(),
+        prob = count / input$num_simulations,
+        mean_profile = mean(profile_value))
+      
+    # prob_table <- results %>%
+    #   select(year, profile_value, sim_num, event) %>%
+    #   filter(year == max(year)) %>%
+    #   group_by(event) %>%
+    #   summarize(
+    #     year = year,
+    #     sim_num = sim_num, 
+    #     event = event,
+    #     prob = case_when(event == "Success" ~ sum(event == "Success")/nrow(prob_table),
+    #                      event == "Failure" ~ sum(event == "Failure")/nrow(prob_table)),
+    #     mean_profile = case_when(event == "Success" ~ mean(profile_value),
+    #                              event == "Failure" ~ mean(profile_value))) %>%
+    #   ungroup() %>%
+    #   filter(event == "Success") 
+     
     
     table <- prob_table
     table
