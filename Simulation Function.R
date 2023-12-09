@@ -37,14 +37,25 @@ retire_plan <- function(D, x, age, current_year, retire_year, s, i, r, p) {
 #simulation function
 sim_retirement <- function(D, x, age, current_year, retire_year, s, p, interest_list, infla_list, num_simulations){
   simulate_result <- data.frame()
-  interest_infla_pairs <- cbind(
-    sample(seq(0.01, 0.1, by = 0.005), num_simulations, replace = TRUE),
-    sample(seq(0.01, 0.1, by = 0.005), num_simulations, replace = TRUE)
-  )
+  
+  interest_rate <- sample(seq(0.01, 0.1, by = 0.0005), num_simulations, replace = TRUE)
+  infla_rate <- sample(seq(0.01, 0.1, by = 0.0001), num_simulations, replace = TRUE)
+  
+  while (sum(as.numeric(interest_rate == infla_rate)) > 0) {
+    interest_rate <- sample(seq(0.01, 0.1, by = 0.0005), num_simulations, replace = TRUE)
+    infla_rate <- sample(seq(0.01, 0.1, by = 0.0001), num_simulations, replace = TRUE)
+  }
+  
+  interest_infla_pairs <- cbind(interest_rate, infla_rate)
+    
+  # interest_infla_pairs <- cbind(
+  #   sample(seq(0.01, 0.1, by = 0.005), num_simulations, replace = TRUE),
+  #   sample(seq(0.01, 0.1, by = 0.005), num_simulations, replace = TRUE)
+  # )
+  
   for(r in 1:nrow(interest_infla_pairs)){
     interest_rate <- interest_infla_pairs[r,1]
     infla_rate <- interest_infla_pairs[r,2]
-    
     result <- retire_plan(D, x, age, current_year, retire_year, s, interest_rate, infla_rate, p)
     result <- result %>%
       mutate(interest_rate = rep(interest_rate, nrow(result))) %>%
@@ -59,3 +70,30 @@ sim_retirement <- function(D, x, age, current_year, retire_year, s, p, interest_
 }
 
 test_result <- sim_retirement(100000, 10000, 35, 2023, 2050, 10000, 30000, interest_list, infla_list, 10)
+prob_table <- test_result %>%
+  select(year, profile_value, sim_num, event) %>%
+  filter(year == max(year)) %>%
+  group_by(event) %>%
+  summarize(
+    year = year,
+    sim_num = sim_num, 
+    event = event,
+    prob = case_when(event == "Success" ~ sum(event == "Success")/nrow(prob_table),
+                             event == "Failure" ~ sum(event == "Failure")/nrow(prob_table)),
+    mean_profile = case_when(event == "Success" ~ mean(profile_value),
+                             event == "Failure" ~ mean(profile_value))) %>%
+  filter(event == "Success")
+
+prob_success <- prob_table$prob[1]
+prob_success
+
+  # mutate(prob = case_when(event == "Success" ~ sum(event == "Success")/nrow(prob_table),
+  #                         event == "Failure" ~ sum(event == "Failure")/nrow(prob_table))) %>%
+  # mutate(mean_profile = )
+  
+
+
+
+
+
+
