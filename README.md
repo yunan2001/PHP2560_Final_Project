@@ -15,5 +15,4 @@ When it comes to investment planning in retirement, there are a lot of uncertain
 ## Simulation Process
 
 ### i) Retirement Plan Formula
-
-$$D * (1 + (i-r)/(1+r))^j + x * (((1 + (i-r)/(1+r))^j - 1) / (i-r)/(1+r))$$
+$$D * (1 + \frac{(i-r)}{(1+r)})^j + x * (\frac{((1 + \frac{(i-r)}/{(1+r)})^j - 1)}{\frac{(i-r)}{(1+r)})$$
