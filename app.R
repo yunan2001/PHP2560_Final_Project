@@ -141,12 +141,11 @@ server <- function(input, output) {
         color = "Event Status"
       ) +
       geom_vline(xintercept = retire_year, linetype = "dashed", color = "black") +
-      annotate("text", x = retire_year+10, y = 4900000, label = paste("Retire Year:", retire_year), hjust = 1) +
+      annotate("text", x = retire_year, y = 4900000, label = paste("Retire Year:", retire_year), hjust = 1) +
       scale_color_manual(values = c("Success" = "chartreuse3", "Failure" = "orangered1")) +
       coord_cartesian(ylim = c(0, 5000000), xlim = c(min(results$year), retire_year+30))
     fig <- ggplotly(p)
-  
-    })
+  })
   # Create a guage
   output$Guage_prob <- renderPlotly({
     results <- simulated_results()
@@ -162,8 +161,6 @@ server <- function(input, output) {
     success = c(80, 100)
     warning = c(50, 79.99999)
     danger = c(0, 49.99999)
-    # ranges <- unique(c(danger, warning, success))
-    # probSucColor <- c("red", "orange", "green")[findInterval(prob_success, ranges, rightmost.closed = TRUE)]
     
     colors = c("red", "orange", "green")
     color_index = findInterval(prob_success, c(danger[1], warning[1], success[1]), rightmost.closed = TRUE)
@@ -194,37 +191,54 @@ server <- function(input, output) {
   # Create a table
   results_table <- reactive({
     results <- simulated_results()
-    prob_table <- results %>%
-      filter(year == max(year)) %>%
-      group_by(event) %>%
-      summarize(
-        count = n(),
-        prob = count / input$num_simulations,
-        mean_profile = mean(profile_value))
-      
-    # prob_table <- results %>%
-    #   select(year, profile_value, sim_num, event) %>%
-    #   filter(year == max(year)) %>%
-    #   group_by(event) %>%
-    #   summarize(
-    #     year = year,
-    #     sim_num = sim_num, 
-    #     event = event,
-    #     prob = case_when(event == "Success" ~ sum(event == "Success")/nrow(prob_table),
-    #                      event == "Failure" ~ sum(event == "Failure")/nrow(prob_table)),
-    #     mean_profile = case_when(event == "Success" ~ mean(profile_value),
-    #                              event == "Failure" ~ mean(profile_value))) %>%
-    #   ungroup() %>%
-    #   filter(event == "Success") 
-     
     
-    table <- prob_table
-    table
+    results$profile_value <- pmax(results$profile_value, 0)
+    
+    years <- c(input$current_yr+5, 
+               input$current_yr+10,  
+               input$current_yr+15, 
+               input$current_yr+20, 
+               input$current_yr+25, 
+               max(results$year))
+    
+    results_filter <- results %>%
+      filter(year %in% years)
+    
+    
+    quantile_df <- data.frame(Trials=c("Best", "25th Percentile", "50th Percentile", "75th Percentile", "Worst"))
+    
+    for (x in years) {
+      year_data <- results_filter[results_filter$year==x, "profile_value"]
+      year_quantiles <- round(quantile(year_data, probs = c(1, 0.75, 0.5, 0.25, 0)), 0)
+      year_quantiles_df <- setNames(as.data.frame(year_quantiles), paste("Year", x))
+      quantile_df <- cbind(quantile_df, year_quantiles_df) 
+    }
+    
+    for (z in 2:ncol(quantile_df)) {
+      quantile_df[,z] <- prettyNum(quantile_df[,z], big.mark = ",")
+      quantile_df[,z] <- paste("$", quantile_df[,z], sep = "")
+    }
+    
+    year_go0_df <- results %>% 
+      group_by(sim_num) %>%
+      filter(profile_value==0) %>%
+      slice_min(year)
+    
+    mean_year_go0 <- round(mean(year_go0_df$year), 0)
+    
+    quantile_df <- quantile_df %>%
+      mutate(mean_year=c("", "", "", "", mean_year_go0))
+    
+    colnames(quantile_df) <- c("Trials", "Year 5", 
+                               "Year 10", "Year 15", 
+                               "Year 20", "Year 25", 
+                               "End Year", "Average Year Money Goes to 0")
+    quantile_df
   })
+  
   output$results_table <- renderTable({
     results_table()
   })
-  
   
 }
 # Run the application 
