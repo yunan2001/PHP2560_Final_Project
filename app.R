@@ -3,6 +3,18 @@ library(shiny)
 library(plotly)
 
 retire_plan <- function(D, x, age, current_year, retire_year, s, i, r, p) {
+  #' Returns a data frame of result from a single simulation for the profile value of user
+  #' @param D, the amount of down payment the user wants to put
+  #' @param x, the amount of annual payment the user wants to put
+  #' @param age, the age of the user
+  #' @param current_year, the year the user wants to start the retirement plan
+  #' @param retire_year, the year the user wants to retire
+  #' @param s, the amount of social security money the user will get annually after retirement
+  #' @param i, the return rate of the retirement plan
+  #' @param r, the inflation rate in the following years
+  #' @param p, the amount of money the user expected to spend annually after retirement
+  #' @return a data frame containing year, age, and profile value for each year
+  
   # Calculate the number of years between current year and retirement
   n <- retire_year - current_year
   
@@ -38,37 +50,62 @@ retire_plan <- function(D, x, age, current_year, retire_year, s, i, r, p) {
   profile_df <- rbind(before_retire, after_retire)
   return(profile_df)
 }
+
+
 #simulation function
 sim_retirement <- function(D, x, age, current_year, retire_year, s, p, interest_list, infla_list, num_simulations){
+  #' Returns a data frame of result from all simulations for the profile value of user
+  #' @param D, the amount of down payment the user wants to put
+  #' @param x, the amount of annual payment the user wants to put
+  #' @param age, the age of the user
+  #' @param current_year, the year the user wants to start the retirement plan
+  #' @param retire_year, the year the user wants to retire
+  #' @param s, the amount of social security money the user will get annually after retirement
+  #' @param p, the amount of money the user expected to spend annually after retirement
+  #' @param interest_list, a list of sampled return rate for the retirement plan
+  #' @param infla_list, a list of sampled inflation rate in the following years
+  #' @param num_simulations, the number of simulation the user wants to perform
+  #' @return a data frame containing year, age, profile value for each year, 
+  #' number of simulation, and result for all simulations
+  
+  #set up an empty data frame
   simulate_result <- data.frame()
   
-  interest_rate <- sample(seq(0.01, 0.1, by = 0.0005), num_simulations, replace = TRUE)
-  infla_rate <- sample(seq(0.01, 0.07, by = 0.0001), num_simulations, replace = TRUE)
+  #sample the return and inflation rate for the number of simulations and pair the two rates
+  interest_rate <- sample(seq(0.01, 0.1, by = 0.0005), 
+                          num_simulations, replace = TRUE)
+  infla_rate <- sample(seq(0.01, 0.07, by = 0.0001), 
+                       num_simulations, replace = TRUE)
   
-  length(interest_rate)
-  length(infla_rate)
   while (sum(as.numeric(interest_rate == infla_rate)) > 0) {
-    interest_rate <- sample(seq(0.01, 0.1, by = 0.0005), num_simulations, replace = TRUE)
-    infla_rate <- sample(seq(0.01, 0.07, by = 0.0001), num_simulations, replace = TRUE)
+    interest_rate <- sample(seq(0.01, 0.1, by = 0.0005), 
+                            num_simulations, replace = TRUE)
+    infla_rate <- sample(seq(0.01, 0.07, by = 0.0001), 
+                         num_simulations, replace = TRUE)
   }
   
   interest_infla_pairs <- cbind(interest_rate, infla_rate)
   
+  #for each pair of rates, call the retire plan function to get the data frame and combine all simulations'result together
   for(r in 1:nrow(interest_infla_pairs)){
     interest_rate <- interest_infla_pairs[r,1]
     infla_rate <- interest_infla_pairs[r,2]
-    result <- retire_plan(D, x, age, current_year, retire_year, s, interest_rate, infla_rate, p)
+    result <- retire_plan(D, x, age, current_year, retire_year, 
+                          s, interest_rate, infla_rate, p)
+    
+    #compile the number of simulation and the result to the data frame
     result <- result %>%
       mutate(interest_rate = rep(interest_rate, nrow(result))) %>%
       mutate(infla_rate = rep(infla_rate, nrow(result))) %>%
       mutate(sim_num=rep(r, nrow(result))) %>%
-      mutate(event=case_when(result[nrow(result),3] >=0 ~ "Success",
+      mutate(event=case_when(result[nrow(result),3] >= 0 ~ "Success",
                              TRUE ~ "Failure"))
     simulate_result <- rbind(simulate_result, result)
     r = r+1
   }
   return(simulate_result)
 }
+
 
 
 ui <- fluidPage(
@@ -78,42 +115,55 @@ ui <- fluidPage(
   sidebarLayout(
     sidebarPanel(
       numericInput("num_simulations", "Number of Simulations:", value = 1000),
-      sliderInput("down_pmt", "Down Payment:", min = 0, max = 1000000, value = 500000, round=TRUE,step=5000),
-      sliderInput("annual_pmt", "Annual Payment:", min = 0, max = 100000, value = 30000, round=TRUE,step=5000),
-      sliderInput("social_income", "Social Security Income:", min = 0, max = 100000, value = 20000, round=TRUE,step=5000),
-      sliderInput("annual_spending", "Annual Spending:", min = 0, max = 100000, value = 30000, round=TRUE,step=5000),
+      sliderInput("down_pmt", "Down Payment:", 
+                  min = 0, max = 1000000, 
+                  value = 500000, 
+                  round=TRUE,step=5000),
+      sliderInput("annual_pmt", "Annual Payment:", 
+                  min = 0, max = 100000, 
+                  value = 30000, 
+                  round=TRUE,step=5000),
+      sliderInput("social_income", "Social Security Income:", 
+                  min = 0, max = 100000, 
+                  value = 20000, 
+                  round=TRUE,step=5000),
+      sliderInput("annual_spending", "Annual Spending:", 
+                  min = 0, max = 100000, 
+                  value = 30000, 
+                  round=TRUE,step=5000),
       numericInput("age", "Your Age:", value = 30),
-      numericInput("current_yr", "Plan Start Year:", min = 2023, max = 2123, value = 2023),
-      numericInput("retire_yr", "Expected Retire Year:", min = 2023, max = 2123, value = 2050),
+      numericInput("current_yr", "Plan Start Year:", 
+                   min = 2023, max = 2123, 
+                   value = 2023),
+      numericInput("retire_yr", "Expected Retire Year:", 
+                   min = 2023, max = 2123, 
+                   value = 2050),
       actionButton("simulate", "Simulate")
     ),
     mainPanel(
       tabsetPanel(type = "tabs",
                   tabPanel("Plot", plotlyOutput("portfolio_value"), 
-                           div(plotlyOutput("Guage_prob", width = "400px", height = "400px"), align = "center")),
+                           div(plotlyOutput("Guage_prob", 
+                                            width = "400px", 
+                                            height = "400px"), 
+                               align = "center")),
                   tabPanel("Table", tableOutput("results_table"))
     )
   )
-  
-  # fluidRow(
-  #   column(12, plotlyOutput("portfolio_value"),
-  #          fluidRow(
-  #            column(9, tableOutput("results_table")),
-  #            column(3, plotlyOutput("Guage_prob"))
-  #          ))
-  # )
 ))
 
+
 server <- function(input, output) {
-  # Pop-up text for the simulation description
+  
+  #Pop-up text for the simulation description
   observeEvent(input$sim_desc, {
     showModal(modalDialog(title = "Retirement Planning Simulation Description", 
                           HTML("In this simulation,")))
   })
   
-  
-  # Simulated results preparation - will be reactive when a new simulation is run
+  #Simulated results preparation - will be reactive when a new simulation is run
   simulated_results <- eventReactive(input$simulate, {
+    #named all inputs
     num_simulations <- input$num_simulations
     D <- input$down_pmt 
     x <- input$annual_pmt 
@@ -121,37 +171,54 @@ server <- function(input, output) {
     current_year <- input$current_yr
     retire_year <- input$retire_yr
     s <- input$social_income 
-    p <- input$annual_spending 
-    simulate_result <- sim_retirement(D, x, age, current_year, retire_year, s, p, interest_list, infla_list, num_simulations)
+    p <- input$annual_spending
+    
+    #call the simulation function
+    simulate_result <- sim_retirement(D, x, age, current_year, retire_year, 
+                                      s, p, interest_list, infla_list, num_simulations)
     
     return(simulate_result)
   })
   
-  # Create a plot
+  #Create a plot
   output$portfolio_value <- renderPlotly({
-    # Get the results from the simulation
+    
+    #Get the results from the simulation
     results <- simulated_results()
     retire_year <- input$retire_yr
-    # Plot the results
+    
+    #Plot the results
     p <- ggplot(results, aes(x = year, y = profile_value, group = sim_num)) +
       geom_line(aes(color = factor(event), 
-                    text = paste0("Profile Value:$", prettyNum(profile_value,big.mark = ","), '\n', "Year:", year)),
+                    text = paste0("Profile Value:$", 
+                                  prettyNum(profile_value,big.mark = ","),
+                                  '\n', "Year:", year)),
                 alpha = 1, size = 0.1) +
       theme_minimal() +
-      labs(
-        x = "Year",
-        y = "Portfolio Value",
-        color = "Event Status"
-      ) +
-      geom_vline(xintercept = retire_year, linetype = "dashed", color = "black") +
-      annotate("text", x = retire_year, y = 4900000, label = paste("Retire Year:", retire_year), hjust = 1) +
-      scale_color_manual(values = c("Success" = "chartreuse3", "Failure" = "orangered1")) +
-      coord_cartesian(ylim = c(0, 5000000), xlim = c(min(results$year), retire_year+30))
+      labs(x = "Year",
+           y = "Portfolio Value",
+           color = "Event Status") +
+      geom_vline(xintercept = retire_year, 
+                 linetype = "dashed", color = "black") +
+      annotate("text", x = retire_year, y = 4900000, 
+               label = paste("Retire Year:", retire_year), 
+               hjust = 1) +
+      scale_color_manual(values = c("Success" = "chartreuse3", 
+                                    "Failure" = "orangered1")) +
+      coord_cartesian(ylim = c(0, 5000000), 
+                      xlim = c(min(results$year), retire_year+30))
+    
+    #convert the plot to animated
     fig <- ggplotly(p, tooltip = "text")
   })
-  # Create a guage
+  
+  #Create a guage
   output$Guage_prob <- renderPlotly({
+    
+    #Get the results from the simulation
     results <- simulated_results()
+    
+    #calculate the probability of success and failure trials, and the average profile value
     prob_table <- results %>%
       filter(year == max(year)) %>%
       group_by(event) %>%
@@ -160,15 +227,18 @@ server <- function(input, output) {
         prob = count / input$num_simulations,
         mean_profile = mean(profile_value))
     
+    #convert the probability to percentage and set the range for different level
     prob_success <- 100*prob_table$prob[prob_table$event == "Success"]
     success = c(80, 100)
     warning = c(50, 79.99999)
     danger = c(0, 49.99999)
     
+    #set the color for each range level
     colors = c("red", "orange", "green")
     color_index = findInterval(prob_success, c(danger[1], warning[1], success[1]), rightmost.closed = TRUE)
     probSucColor = colors[color_index]
     
+    #set up the gauge plot
     fig <- plot_ly(
       domain = list(x = c(0, 1), y = c(0, 1)),
       value = prob_success,
@@ -185,18 +255,21 @@ server <- function(input, output) {
           line = list(color = "green", width = 4),
           thickness = 0.75,
           value = 100)),
-      number = list(suffix = "%")) # Add this line to include the percentage sign) 
+      number = list(suffix = "%"))
+    
     fig <- fig %>% layout(margin = list(l=30, r=30, t=80, b=30))
   })
   
-  
-  
   # Create a table
   results_table <- reactive({
+    
+    #Get the results from the simulation
     results <- simulated_results()
     
+    #convert all negative profile value to 0
     results$profile_value <- pmax(results$profile_value, 0)
     
+    #filter all rows which have year in the years list
     years <- c(input$current_yr+5, 
                input$current_yr+10,  
                input$current_yr+15, 
@@ -207,7 +280,7 @@ server <- function(input, output) {
     results_filter <- results %>%
       filter(year %in% years)
     
-    
+    #find the quantile of each year's profile value and combine all results together to get the table
     quantile_df <- data.frame(Trials=c("Best", "25th Percentile", "50th Percentile", "75th Percentile", "Worst"))
     
     for (x in years) {
@@ -222,6 +295,7 @@ server <- function(input, output) {
       quantile_df[,z] <- paste("$", quantile_df[,z], sep = "")
     }
     
+    #find the average year for our retirement plan running out of money and compile it to our df
     year_go0_df <- results %>% 
       group_by(sim_num) %>%
       filter(profile_value==0) %>%
@@ -232,6 +306,7 @@ server <- function(input, output) {
     quantile_df <- quantile_df %>%
       mutate(mean_year=c("", "", "", "", mean_year_go0))
     
+    #modify the column names
     colnames(quantile_df) <- c("Trials", "Year 5", 
                                "Year 10", "Year 15", 
                                "Year 20", "Year 25", 
@@ -239,6 +314,7 @@ server <- function(input, output) {
     quantile_df
   })
   
+  #print the table
   output$results_table <- renderTable({
     results_table()
   })
