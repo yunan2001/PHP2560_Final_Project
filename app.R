@@ -72,32 +72,37 @@ sim_retirement <- function(D, x, age, current_year, retire_year, s, p, interest_
 
 
 ui <- fluidPage(
-  titlePanel("Retirement Planning Simulation"),
-  
+  titlePanel("Retirement Planning Simulator"),
+  actionButton("sim_desc", "How Does This Retirement Plan Simulator Work"),
+  h3("Tell Me About Your Plan"),
   sidebarLayout(
     sidebarPanel(
       numericInput("num_simulations", "Number of Simulations:", value = 1000),
-      sliderInput("down_pmt", "Down Payment:", min = 0, max = 1000000, value = 100000),
-      sliderInput("annual_pmt", "Annual Payment:", min = 0, max = 50000, value = 10000),
-      sliderInput("social_income", "Social Security Income:", min = 0, max = 50000, value = 10000),
-      sliderInput("annual_spending", "Annual Spending:", min = 0, max = 100000, value = 50000),
-      numericInput("age", "Current Age:", value = 30),
-      numericInput("current_yr", "Current Year:", min = 2023, max = 2123, value = 2023),
-      numericInput("retire_yr", "Retire Year:", min = 2023, max = 2123, value = 2050),
+      sliderInput("down_pmt", "Down Payment:", min = 0, max = 1000000, value = 500000, round=TRUE,step=5000),
+      sliderInput("annual_pmt", "Annual Payment:", min = 0, max = 100000, value = 30000, round=TRUE,step=5000),
+      sliderInput("social_income", "Social Security Income:", min = 0, max = 100000, value = 20000, round=TRUE,step=5000),
+      sliderInput("annual_spending", "Annual Spending:", min = 0, max = 100000, value = 30000, round=TRUE,step=5000),
+      numericInput("age", "Your Age:", value = 30),
+      numericInput("current_yr", "Plan Start Year:", min = 2023, max = 2123, value = 2023),
+      numericInput("retire_yr", "Expected Retire Year:", min = 2023, max = 2123, value = 2050),
       actionButton("simulate", "Simulate")
     ),
     mainPanel(
-      actionButton("sim_desc", "Tell me about my Retirement Plan"),
-      h3("Simulation Results"),
-      plotlyOutput("portfolio_value")
+      tabsetPanel(type = "tabs",
+                  tabPanel("Plot", plotlyOutput("portfolio_value"), 
+                           div(plotlyOutput("Guage_prob", width = "400px", height = "400px"), align = "center")),
+                  tabPanel("Table", tableOutput("results_table"))
     )
-  ),
-  
-  fluidRow(
-    column(6, tableOutput("results_table")),
-    column(6, plotlyOutput("Guage_prob"))
   )
-)
+  
+  # fluidRow(
+  #   column(12, plotlyOutput("portfolio_value"),
+  #          fluidRow(
+  #            column(9, tableOutput("results_table")),
+  #            column(3, plotlyOutput("Guage_prob"))
+  #          ))
+  # )
+))
 
 server <- function(input, output) {
   # Pop-up text for the simulation description
@@ -129,7 +134,9 @@ server <- function(input, output) {
     retire_year <- input$retire_yr
     # Plot the results
     p <- ggplot(results, aes(x = year, y = profile_value, group = sim_num)) +
-      geom_line(aes(color = factor(event)), alpha = 1, size = 0.1) +
+      geom_line(aes(color = factor(event), 
+                    text = paste0("Profile Value:$", prettyNum(profile_value,big.mark = ","), '\n', "Year:", year)),
+                alpha = 1, size = 0.1) +
       theme_minimal() +
       labs(
         x = "Year",
@@ -140,7 +147,7 @@ server <- function(input, output) {
       annotate("text", x = retire_year, y = 4900000, label = paste("Retire Year:", retire_year), hjust = 1) +
       scale_color_manual(values = c("Success" = "chartreuse3", "Failure" = "orangered1")) +
       coord_cartesian(ylim = c(0, 5000000), xlim = c(min(results$year), retire_year+30))
-    fig <- ggplotly(p)
+    fig <- ggplotly(p, tooltip = "text")
   })
   # Create a guage
   output$Guage_prob <- renderPlotly({
