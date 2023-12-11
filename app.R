@@ -71,38 +71,34 @@ sim_retirement <- function(D, x, age, current_year, retire_year, s, p, interest_
 }
 
 
-# Define UI for application 
 ui <- fluidPage(
-  # Application title
   titlePanel("Retirement Planning Simulation"),
   
-  # Adding numeric input field for the number of simulation; Adding radio buttons for selecting the result type.
   sidebarLayout(
     sidebarPanel(
       numericInput("num_simulations", "Number of Simulations:", value = 1000),
-      sliderInput("down_pmt", "Down Payment:", min=0, max=1000000, value=100000),
-      sliderInput("annual_pmt", "Annual Payment:", min=0, max=50000, value=10000),
-      sliderInput("social_income", "Social Security Income:", min=0, max=50000, value=10000),
-      sliderInput("annual_spending", "Annual Spending:", min=0, max=100000, value = 50000),
+      sliderInput("down_pmt", "Down Payment:", min = 0, max = 1000000, value = 100000),
+      sliderInput("annual_pmt", "Annual Payment:", min = 0, max = 50000, value = 10000),
+      sliderInput("social_income", "Social Security Income:", min = 0, max = 50000, value = 10000),
+      sliderInput("annual_spending", "Annual Spending:", min = 0, max = 100000, value = 50000),
       numericInput("age", "Current Age:", value = 30),
-      numericInput("current_yr", "Current Year:", min=2023, max= 2123, value = 2023),
-      numericInput("retire_yr", "Retire Year:", min=2023, max= 2123, value = 2050),
-      actionButton("simulate", "Simulate")                 # action button to start the simulation
+      numericInput("current_yr", "Current Year:", min = 2023, max = 2123, value = 2023),
+      numericInput("retire_yr", "Retire Year:", min = 2023, max = 2123, value = 2050),
+      actionButton("simulate", "Simulate")
     ),
-    
-    # Adding a main panel with a title, plot output, and table output.
     mainPanel(
       actionButton("sim_desc", "Tell me about my Retirement Plan"),
       h3("Simulation Results"),
-      plotlyOutput("portfolio_value"),
-      plotlyOutput("Guage_prob"), 
-      tableOutput("results_table")
+      plotlyOutput("portfolio_value")
     )
+  ),
+  
+  fluidRow(
+    column(6, tableOutput("results_table")),
+    column(6, plotlyOutput("Guage_prob"))
   )
 )
 
-
-# Define server logic required to draw a histogram
 server <- function(input, output) {
   # Pop-up text for the simulation description
   observeEvent(input$sim_desc, {
