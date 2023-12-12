@@ -1,63 +1,70 @@
 ---
-title: "Retirement Plan Simulator"
+title: "PHP2560 Final Project: Retirement Plan Simulator"
 author: Yingxi Kong, Yunan Chen, Yingqiu Huang
 output:
   bookdown::pdf_document2:
     toc: false
+    number_sections: false
 ---
 
 # Retirement Plan Simulator Description
 
 ## Background
 
-When it comes to investment planning in retirement, there are a lot of uncertainties, such as unpredictable inflation rate and different interest rate for different investment plan. The retirement plan also relies on the amount of down payment and the amount of money the investor put in the plan each year. To account for these uncertainties and to better help investors to find the optimal planning for retirement, we created a simulator that can generate the the investor's profile value from the start year of their investment to the year when they turn 100.
+When planning for retirement investments, investors face numerous uncertainties, such as fluctuating inflation rates and varying interest rates across different investment plans. The success of a retirement plan also depends on factors like the initial down payment and the annual contributions made to the plan. To address these uncertainties and assist investors in finding the optimal retirement strategy, we have developed a simulator. This tool projects the value of an investor's portfolio from the start of their investment journey until they reach the age of 100.
 
-## Simulation Process
+## Simulation Generating Process
 
-### Formula for Profile Value before Expected Retirement Year {#sec-before}
+### Formula for Portfolio Value before Expected Retirement Year
 
-The formula here calculates the investor's profile value of each year based on parameters given above.
+This formula calculates the annual value of the investor's portfolio before retirement, taking into account the following parameters:
 
--   D (Down Payment): Initial Payment for the investor
+- D (Down Payment): The initial amount contributed by the investor in the beginning of the plan.
+- r (Inflation Rate): The annual inflation rate, varying from 1% to 7%.
+- x (Annual Investment): The amount invested by the investor into the plan each year.
+- i (Interest Rate): The annual interest rate applied to the investment, varying from 1% to 10%.
+- n (Number of Years): The duration from the commencement of the investment until the anticipated retirement year.
+- p (Annual Spending): The yearly expenditure the investor expects to incur.
+- s (Social Security Income): The annual income from government social security benefits received post-retirement.
 
--   r (Inflation Rate): Inflation rate is between 1% - 7%
 
--   x (Annual Investment): The amount of money the investor put in the plan each year
-
--   i (Interest Rate): Interest rate is between 1% - 10%
-
--   n (Number of Years): The number of years from the start of the investment to the expected retirement year
-
--   p (Annual Spending): The expected amount of money the investor spends each year
-
--   s (Social Security Income): The amount of money government issues each year after the investor's retirement
-
-$$
+```{=tex}
+\begin{equation} 
 Profile Value = D \cdot (1 + \frac{i-r}{1+r})^n + x \cdot \frac{(1 + \frac{i-r}{1+r})^n - 1}{\frac{i-r}{1+r}}
-$$
+(\#eq:mod1)
+\end{equation}
+```
 
-### Formula for Profile Value after Expected Retirement Year {#sec-after}
+### Formula for Profile Value after Expected Retirement Year
 
-The formula calculates the investor's profile value of each year after their retirement, given that p is their annual spending and s is social security income.
+This formula calculates the yearly value of an investor's portfolio following retirement, incorporating **p** for their yearly expenditures and **s** for their social security benefits.
 
-$$
-ProfileValue_{k+1}=ProfileValue_{k} * (1 + \frac{i-r}{1+r}) - p + s, \text{k= number of years after retirement}
-$$
+```{=tex}
+\begin{equation} 
+ProfileValue_{k+1}=ProfileValue_{k} \cdot (1 + \frac{i-r}{1+r}) - p + s, \ \text{k= number of years after retirement}
+(\#eq:mod2)
+\end{equation}
+```
 
-### Simulation
+### Simulation Functions
 
--   Retirement Plan Calculation Function: This function uses formulas mentioned in \@ref(sec-before) and \@ref(sec-after). This function will output the a data frame containing year, age, profile value, simulation number.
+```r
+retire_plan(D, x, age, current_year, retire_year, s, i, r, p)
+```
+This function uses formula \@ref(eq:mod1) and formula \@ref(eq:mod2) and returns a data frame including columns for the year, the age of an investor, profile value, and simulation iteration.
 
--   Simulation Function: First, we sample the interest rate and the inflation rate. Second, we simulate the retirement plan calculation function using the sampled interest rate and inflation rate. Finally, we construct a data frame containing year, age, profile value, simulation number, interest rate, inflation rate, event (success or failure). Success means that the investor's profile value is not 0 when they turn 100 years old. (i.e. they survive) Failure means that the investor's profile value becomes less than 0 before they turn 100 years old. (i.e. they do not have enough money to survive)
+```r
+sim_retirement(D, x, age, current_year, retire_year, s, p, interest_list, infla_list, num_simulations)
+```
 
-## Outcomes
+This function generates random samples for the interest and inflation rates, and then it proceeds to compute the retirement plan using these varying rates. It outputs a data frame that includes columns for the year, the investor's age, portfolio value, simulation iteration, interest rate, and inflation rate, as well as an 'event' status indicating 'success' or 'failure.' A 'success' event signifies that the investor's portfolio value remains above zero at the age of 100, indicating financial longevity. Conversely, a 'failure' event occurs if the portfolio value drops below zero before reaching 100 years old, reflecting insufficient funds for the investor's lifespan.
 
-### Shiny App
+## In-App
 
-This Shiny app takes in user's inputs (Down Payment, Annual Investment, Social Security Income, Annual Spending, Age, Current Year, Retire Year), and output two plots and one table.
+This Shiny application features an input section that takes in user data including Down Payment, Annual Investment, Social Security Income, Annual Spending, Age, Current Year, and Retirement Year.
 
-### Interpretation of Plots and Table
+The application is divided into two tabs:
 
--   Plots: The first plot is an interactive line plot showing all simulation results. The x-axis is year, and the y-axis is the profile value. The event is coded as green (success) and red (failure). The second plot displays the overall probability of success. We consider an investor survived if the probability of success is greater than 80%.
+1. 'Visualization': This tab presents two graphical representations. The first is an interactive line graph that displays all simulation outcomes, with 'year' on the x-axis and 'portfolio value' on the y-axis. Successful events are marked in green, while failures are indicated in red. The second graph illustrates the probability of success, defining survival as instances where this probability exceeds 80%.
 
--   Table: The table shows the distribution of profile value under the simulation. We found the best, 75th percentile, 50th percentile, 25th percentile, worst profile values at different years. We also added a column showing the average year where profile value goes to 0.
+2. 'Summary Table': This tab generates a table summarizing the simulated portfolio value distribution. It identifies the optimal, 75th, median (50th), 25th percentile, and lowest portfolio values across different years. An additional column reveals the average year when the portfolio value depletes to zero.
