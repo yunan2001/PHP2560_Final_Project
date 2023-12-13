@@ -19,14 +19,13 @@ When planning for retirement investments, investors face numerous uncertainties,
 
 This formula calculates the annual value of the investor's portfolio before retirement, taking into account the following parameters:
 
-- D (Down Payment): The initial amount contributed by the investor in the beginning of the plan.
-- r (Inflation Rate): The annual inflation rate, varying from 1% to 7%.
-- x (Annual Investment): The amount invested by the investor into the plan each year.
-- i (Interest Rate): The annual interest rate applied to the investment, varying from 1% to 10%.
-- n (Number of Years): The duration from the commencement of the investment until the anticipated retirement year.
-- p (Annual Spending): The yearly expenditure the investor expects to incur.
-- s (Social Security Income): The annual income from government social security benefits received post-retirement.
-
+-   D (Down Payment): The initial amount contributed by the investor in the beginning of the plan.
+-   r (Inflation Rate): The annual inflation rate, varying from 1% to 7%.
+-   x (Annual Investment): The amount invested by the investor into the plan each year.
+-   i (Interest Rate): The annual interest rate applied to the investment, varying from 1% to 10%.
+-   n (Number of Years): The duration from the commencement of the investment until the anticipated retirement year.
+-   p (Annual Spending): The yearly expenditure the investor expects to incur.
+-   s (Social Security Income): The annual income from government social security benefits received post-retirement.
 
 ```{=tex}
 \begin{equation} 
@@ -34,7 +33,6 @@ Profile Value = D \cdot (1 + \frac{i-r}{1+r})^n + x \cdot \frac{(1 + \frac{i-r}{
 (\#eq:mod1)
 \end{equation}
 ```
-
 ### Formula for Profile Value after Expected Retirement Year
 
 This formula calculates the yearly value of an investor's portfolio following retirement, incorporating **p** for their yearly expenditures and **s** for their social security benefits.
@@ -45,15 +43,15 @@ ProfileValue_{k+1}=ProfileValue_{k} \cdot (1 + \frac{i-r}{1+r}) - p + s, \ \text
 (\#eq:mod2)
 \end{equation}
 ```
-
 ### Simulation Functions
 
-```r
+``` r
 retire_plan(D, x, age, current_year, retire_year, s, i, r, p)
 ```
+
 This function uses formula \@ref(eq:mod1) and formula \@ref(eq:mod2) and returns a data frame including columns for the year, the age of an investor, profile value, and simulation iteration.
 
-```r
+``` r
 sim_retirement(D, x, age, current_year, retire_year, s, p, interest_list, infla_list, num_simulations)
 ```
 
@@ -65,6 +63,6 @@ This Shiny application features an input section that takes in user data includi
 
 The application is divided into two tabs:
 
-1. 'Visualization': This tab presents two graphical representations. The first is an interactive line graph that displays all simulation outcomes, with 'year' on the x-axis and 'portfolio value' on the y-axis. Successful events are marked in green, while failures are indicated in red. The second graph illustrates the probability of success, defining survival as instances where this probability exceeds 80%.
+1.  'Visualization': This tab presents two graphical representations. The first is an interactive line graph that displays all simulation outcomes, with 'year' on the x-axis and 'portfolio value' on the y-axis. Successful events are marked in green, while failures are indicated in red. The second graph illustrates the probability of success, defining survival as instances where this probability exceeds 80%.
 
-2. 'Summary Table': This tab generates a table summarizing the simulated portfolio value distribution. It identifies the optimal, 75th, median (50th), 25th percentile, and lowest portfolio values across different years. An additional column reveals the average year when the portfolio value depletes to zero.
+2.  'Summary Table': This tab generates a table summarizing the simulated portfolio value distribution. It identifies the optimal, 75th, median (50th), 25th percentile, and lowest portfolio values across different years. An additional column reveals the average year when the portfolio value depletes to zero.
