@@ -3,11 +3,7 @@ library(shiny)
 library(plotly)
 library(shinythemes)
 library(shinycssloaders)
-library(htmltools)
-library(bsplus)
 library(shinyBS)
-library(shinydashboard)
-library(shinyWidgets)
 
 retire_plan <- function(D, x, age, current_year, retire_year, s, i, r, p) {
   #' Returns a data frame of result from a single simulation for the portfolio value of user
@@ -119,40 +115,55 @@ ui <- fluidPage(
   theme=shinytheme("sandstone"),
   titlePanel("Retirement Planning Simulator"),
   actionButton("sim_desc", "How Does This Retirement Plan Simulator Work"),
-  h3("Tell Me About Your Plan"),
+  h3("Customize Your Retirement Plan"),
   sidebarLayout(
     sidebarPanel(
-      tags$style(
-        HTML(".tooltip {
-                        width: 400px;
-                        text-color:black;
-                        background-color:white;
-                        }")),
       numericInput("num_simulations", "Number of Simulations:", value = 1000),
-      sliderInput("down_pmt", "Down Payment:",
+      div(style = "margin-bottom: 5px;", # Add space below the label
+          strong("Down Payment:"),
+          actionButton("down_pmt_help", label = icon("question-circle"), 
+                       style = "display: inline-flex; justify-content: center; align-items: center; 
+                      height: 10px; width: 10px; border: none; background-color: tan;"),
+      ),
+      
+      sliderInput("down_pmt", label=NULL,
                   min = 0, max = 1000000,
                   value = 500000,
-                  round=TRUE,step=5000
-                  ),
-      bsTooltip("down_pmt", "The initial lump sum you're investing", placement = "right"),
-     
-      sliderInput("annual_pmt", "Annual Payment:", 
+                  round=TRUE,step=5000),
+      div(style = "margin-bottom: 5px;", # Add space below the label
+          strong("Annual Investment:"),
+          actionButton("annual_pmt_help", label = icon("question-circle"), 
+                       style = "display: inline-flex; justify-content: center; align-items: center; 
+                      height: 10px; width: 10px; border: none; background-color: tan;"),
+      ),
+      
+      sliderInput("annual_pmt", label=NULL, 
                   min = 0, max = 100000, 
                   value = 30000, 
                   round=TRUE,step=5000),
-      bsTooltip("annual_pmt", title="How much you'll add to your savings each year", placement = "right"),
       
-      sliderInput("social_income", "Social Security Benefit:", 
+      div(style = "margin-bottom: 5px;", # Add space below the label
+          strong("Social Security Benefit:"),
+          actionButton("social_income_help", label = icon("question-circle"), 
+                       style = "display: inline-flex; justify-content: center; align-items: center; 
+                      height: 10px; width: 10px; border: none; background-color: tan;"),
+      ),
+      sliderInput("social_income", label=NULL, 
                   min = 0, max = 100000, 
                   value = 20000, 
                   round=TRUE,step=5000),
-      bsTooltip("social_income", "The yearly income you expect from Social Security after retirement", placement = "right"),
       
-      sliderInput("annual_spending", "Annual Investment:", 
+      div(style = "margin-bottom: 5px;", # Add space below the label
+         strong("Annual Spending:"),
+         actionButton("annual_spending_help", label = icon("question-circle"), 
+                      style = "display: inline-flex; justify-content: center; align-items: center; 
+                      height: 10px; width: 10px; border: none; background-color: tan;"),
+      ),
+      
+      sliderInput("annual_spending", label=NULL, 
                   min = 0, max = 100000, 
                   value = 30000, 
                   round=TRUE,step=5000),
-      bsTooltip("annual_spending", "Your estimated yearly living costs", placement = "right"),
       
       numericInput("age", "Your Age:", value = 30),
       numericInput("current_yr", "Plan Start Year:", 
@@ -178,32 +189,21 @@ ui <- fluidPage(
                                style = "font-size: 18px;")
                   )
                   
-                  # tabPanel("Visualization", 
-                  #          plotlyOutput("portfolio_value") 
-                  #          %>% withSpinner(), 
-                  #          br(),
-                  #          div(textOutput("plot_text"), 
-                  #              style = "font-size: 18px;"),
-                  #          div(plotlyOutput("Guage_prob", 
-                  #                           width = "400px", 
-                  #                           height = "400px"), 
-                  #              align = "center"),
-                  #          br(),
-                  #          div(textOutput("guage_text"), 
-                  #              style = "font-size: 18px;")),
-                  # tabPanel("Summary Table", tableOutput("results_table")
-                  #          %>% withSpinner(),
-                  #          br(),
-                  #          div(textOutput("intro_table"), 
-                  #              style = "font-size: 18px;")
-                  # )
       )
     )
   )
 )
 
 
-server <- function(input, output) {
+server <- function(input, output, session) {
+  addPopover(session, "down_pmt_help", "Down Payment Info", 
+             "The initial lump sum you're investing at the start of your retirement plan.")
+  addPopover(session, "annual_pmt_help", "Annual Investment Info", 
+             "How much you'll add to your savings each year.")
+  addPopover(session, "social_income_help", "Social Security Benefit Info", 
+             "The yearly income you expect from Social Security after retirement")
+  addPopover(session, "annual_spending_help", "Annual Spending Info", 
+             "Your estimated yearly living costs")
   
   #Pop-up text for the simulation description
   observeEvent(input$sim_desc, {
